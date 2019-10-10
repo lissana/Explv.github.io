@@ -4,9 +4,9 @@ import {Position} from './Position.js';
 
 export class Path {
 
-    constructor(map) {
+    constructor(map, featureGroup) {
         this.map = map;
-        this.featureGroup = new L.FeatureGroup();
+        this.featureGroup = featureGroup;
         this.positions = [];
         this.lines = [];
         this.rectangles = [];

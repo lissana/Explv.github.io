@@ -14,19 +14,28 @@ export class OSBotPathConverter extends OSBotConverter {
         Position(int x, int y, int z)
     */
     fromJava(text, path) {
+        console.log("fromJava");
         path.removeAll();
-        text = text.replace(/\s/g, '');
-        var posPattern = `new(Position|WebNode_Point|WebNode_IfExists)+\\(([^)]*)\\)`;
-        var re = new RegExp(posPattern, "mg");
-        var match;
-        while ((match = re.exec(text))) {
-            if (match[1] == "WebNode_IfExists") {
-                var values = match[2].split(",");
-                path.add(new Position(values[0], values[1], values[3]));
-            } else {
-                var values = match[2].split(",");
-                path.add(new Position(values[0], values[1], values[2]));
+
+        var groupRe = new RegExp(`\\[([^\\]]*)\\]`, "mg");
+        var g;
+        while ((g = groupRe.exec(text))) {
+
+            var gtext = g[1].replace(/\s/g, '');
+            var posPattern = `new(Position|WebNode_Point|WebNode_IfExists)+\\(([^)]*)\\)`;
+            var re = new RegExp(posPattern, "mg");
+            var match;
+            while ((match = re.exec(gtext))) {
+                if (match[1] == "WebNode_IfExists") {
+                    var values = match[2].split(",");
+                    path.add(new Position(values[0], values[1], values[3]));
+                } else {
+                    var values = match[2].split(",");
+                    path.add(new Position(values[0], values[1], values[2]));
+                }
             }
+
+            path.addPath();
         }
     }
     
@@ -42,20 +51,24 @@ export class OSBotPathConverter extends OSBotConverter {
         return `${this.javaPosition} position = new ${this.javaPosition}(${position.x}, ${position.y}, ${position.z});`;
     }
     
-    toJavaArray(path) {
-        if (path.positions.length == 1) {
-            return this.toJavaSingle(path.positions[0]);
-        } else if (path.positions.length > 1) {
-            var output = `${this.javaPosition}[] path = {\n`;
-            for (var i = 0; i < path.positions.length; i++) {
-                output += `    new ${this.javaPosition}(${path.positions[i].x}, ${path.positions[i].y}, ${path.positions[i].z})`;
-                if (i != path.positions.length - 1) output += ",";
-                output += "\n";
+    toJavaArray(apath) {
+        var output = "";
+        for(var p=0; p<apath.paths.length; p++) {
+            var path = apath.paths[p];
+            if (path.positions.length == 1) {
+                output += this.toJavaSingle(path.positions[0]);
+            } else if (path.positions.length > 1) {
+                output += `[\n`;
+                for (var i = 0; i < path.positions.length; i++) {
+                    output += `    new ${this.javaPosition}(${path.positions[i].x}, ${path.positions[i].y}, ${path.positions[i].z})`;
+                    if (i != path.positions.length - 1) output += ",";
+                    output += "\n";
+                }
+                output += "]\n";
             }
-            output += "};";
-            return output;
+            output += "\n";
         }
-        return "";
+        return output;
     }
     
     toJavaList(path) {
