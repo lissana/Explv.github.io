@@ -16,7 +16,7 @@ export class OSBotPathConverter extends OSBotConverter {
     fromJava(text, path) {
         path.removeAll();
         text = text.replace(/\s/g, '');
-        var posPattern = `new(Position|WebNode_Point)+\\((\\d+,\\d+,\\d)\\)`;
+        var posPattern = `new(Position|WebNode_Point|WebNode_IfExists)+\\((\\d+,\\d+,\\d)\\)`;
         var re = new RegExp(posPattern, "mg");
         var match;
         while ((match = re.exec(text))) {
