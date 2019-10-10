@@ -155,7 +155,9 @@ export var CollectionControl = L.Control.extend({
 
         var context = this;
         $("#output-type").on('change', () => context._outputCode());
-        $("#code-output").on('input propertychange paste', () => context._loadFromText());
+        document.getElementById("code-output").onchange = () => context._loadFromText();
+        document.getElementById("code-output").oninput = () => context._loadFromText();
+        //.on('input propertychange paste', () => context._loadFromText());
         $("#bot-api").on('change', () => context._outputCode());
 
         return container;
@@ -284,20 +286,20 @@ export var CollectionControl = L.Control.extend({
             output = converters[botAPI][this._currentConverter].toJava(this._currentDrawable);
         }
 
-        $("#code-output").html(output);
+        $("#code-output").val(output);
     },
     
     _loadFromText: function() {
         if (this._currentDrawable !== undefined) {
             var botAPI = $("#bot-api option:selected").text();
-            converters[botAPI][this._currentConverter].fromJava($("#code-output").text(), this._currentDrawable);
+            converters[botAPI][this._currentConverter].fromJava($("#code-output").val(), this._currentDrawable);
         }
     },
 
     _copyCodeToClipboard: function() {
         var $temp = $("<textarea>");
         $("body").append($temp);
-        $temp.val($("#code-output").text()).select();
+        $temp.val($("code-output").text()).select();
         document.execCommand("copy");
         $temp.remove();
 
