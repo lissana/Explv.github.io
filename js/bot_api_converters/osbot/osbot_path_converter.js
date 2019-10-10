@@ -16,12 +16,17 @@ export class OSBotPathConverter extends OSBotConverter {
     fromJava(text, path) {
         path.removeAll();
         text = text.replace(/\s/g, '');
-        var posPattern = `new(Position|WebNode_Point|WebNode_IfExists)+\\((\\d+,\\d+,\\d)\\)`;
+        var posPattern = `new(Position|WebNode_Point|WebNode_IfExists)+\\(([^)]*)\\)`;
         var re = new RegExp(posPattern, "mg");
         var match;
         while ((match = re.exec(text))) {
-            var values = match[2].split(",");
-            path.add(new Position(values[0], values[1], values[2]));
+            if (match[1] == "WebNode_IfExists") {
+                var values = match[2].split(",");
+                path.add(new Position(values[0], values[1], values[3]));
+            } else {
+                var values = match[2].split(",");
+                path.add(new Position(values[0], values[1], values[2]));
+            }
         }
     }
     
