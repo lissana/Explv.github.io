@@ -1,5 +1,7 @@
 'use strict';
 
+import PrevNav from '../model/PrevNav.js';
+
 import {Position} from '../model/Position.js';
 import {Area} from '../model/Area.js';
 import {Paths} from '../model/Paths.js';
@@ -66,7 +68,7 @@ var converters = {
     }
 };
 
-export var CollectionControl = L.Control.extend({    
+export var CollectionControl = L.Control.extend({
     options: {
         position: 'topleft'
     },
@@ -85,7 +87,7 @@ export var CollectionControl = L.Control.extend({
         this._prevMousePos = undefined;
 
         this._firstSelectedAreaPosition = undefined;
-        this._drawnMouseArea = undefined;    
+        this._drawnMouseArea = undefined;
         this._editing = false;
 
         var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control noselect');
@@ -115,7 +117,7 @@ export var CollectionControl = L.Control.extend({
         // Area control
         this._createControl('<img src="/css/images/area-icon.png" alt="Area" title="Area" height="30" width="30">', container, function(e) {
             this._toggleCollectionMode(this._areas, "areas_converter", e.target);
-        });        
+        });
 
         // Poly Area control
         this._createControl('<img src="/css/images/polyarea-icon.png" alt="Poly Area" title="Poly Area" height="30" width="30">', container, function(e) {
@@ -163,7 +165,7 @@ export var CollectionControl = L.Control.extend({
 
         return container;
     },
-    
+
     _createControl: function(html, container, onClick) {
         var control = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-custom', container);
         control.innerHTML = html;
@@ -207,7 +209,7 @@ export var CollectionControl = L.Control.extend({
         if (this._currentDrawable instanceof Areas) {
             if (this._firstSelectedAreaPosition !== undefined) {
 
-                if (this._drawnMouseArea !== undefined) { 
+                if (this._drawnMouseArea !== undefined) {
                     this._map.removeLayer(this._drawnMouseArea);
                 }
 
@@ -215,10 +217,10 @@ export var CollectionControl = L.Control.extend({
                 this._drawnMouseArea.addTo(this._map, true);
             }
         } else if (this._currentDrawable instanceof PolyArea) {
-            if (this._drawnMouseArea !== undefined) { 
+            if (this._drawnMouseArea !== undefined) {
                 this._map.removeLayer(this._drawnMouseArea);
             }
-            
+
             this._drawnMouseArea = new PolyArea(this._map);
             this._drawnMouseArea.addAll(this._currentDrawable.positions);
             this._drawnMouseArea.add(mousePos);
@@ -241,10 +243,10 @@ export var CollectionControl = L.Control.extend({
             if (this._drawnMouseArea !== undefined) {
                 this._map.removeLayer(this._drawnMouseArea);
             }
-            
+
             this._currentDrawable = undefined;
             this._currentConverter = undefined;
-            
+
             this._outputCode();
             return;
         }
@@ -255,7 +257,7 @@ export var CollectionControl = L.Control.extend({
 
         this._editing = true;
         $(element).closest("a.leaflet-control-custom").addClass("active");
-        
+
         this._currentConverter = converter;
 
         $("#code-output-panel").show("slide", {direction: "right"}, 300);
@@ -276,10 +278,68 @@ export var CollectionControl = L.Control.extend({
             this._map.addLayer(this._currentDrawable.featureGroup);
         }
 
+        //code to be extracted to current navigation network
+        var fg = this._currentDrawable.featureGroup;
+        var amap = this._map;
+        PrevNav.getLocations(function(nodes, conns) {
+            console.log(fg);
+            // var locationsArray = $.map(nodes, function (v) {
+            //     //console.log(v);
+            //
+            //     //this.positions.push(position);
+            //     if (v.position !== undefined) {
+            //         var rectangle = v.position.toLeaflet(amap);
+            //         fg.addLayer(rectangle);
+            //     }
+            //     //this.rectangles.push(rectangle);
+            // });
+            var indexTonode = {};
+            var locationsArray = $.map(nodes, function (v) {
+                //console.log(v);
+
+                var vn = {node: v, rectangle: undefined};
+                //this.positions.push(position);
+                if (v.area !== undefined) {
+                    var rectangle = v.area.toLeaflet(amap);
+                    fg.addLayer(rectangle);
+                    vn.rectangle = rectangle;
+                } else if (v.position !== undefined) {
+                    var rectangle = v.position.toLeaflet(amap);
+                    fg.addLayer(rectangle);
+                    vn.rectangle = rectangle;
+                }
+                //this.rectangles.push(rectangle);
+                indexTonode[v.index] = vn;
+            });
+
+            var locationsArray = $.map(conns, function (v) {
+                //console.log(indexTonode[v.src]);
+
+                if ((indexTonode[v.src].node.position !== undefined) && (indexTonode[v.dst].node.position !== undefined)) {
+                        var startPosition = indexTonode[v.src].node.position;
+                        var endPosition =  indexTonode[v.dst].node.position;
+                        var line = L.polyline([startPosition.toCentreLatLng(amap), endPosition.toCentreLatLng(amap)], {clickable: false});
+                        fg.addLayer(line);
+                }
+                // if (this.positions.length > 1) {
+                //     this.lines.push(this.createPolyline(this.positions[this.positions.length - 2], this.positions[this.positions.length - 1]));
+                //     this.featureGroup.addLayer(this.lines[this.lines.length - 1]);
+                // }
+                //this.positions.push(position);
+                // if (v.position !== undefined) {
+                //     var rectangle = v.position.toLeaflet(amap);
+                //     fg.addLayer(rectangle);
+                // }
+                //this.rectangles.push(rectangle);
+            });
+
+
+        });
+
         this._outputCode();
     },
 
-    _outputCode: function() {        
+    _outputCode: function() {
         var output = "";
 
         if (this._currentDrawable !== undefined) {
@@ -289,7 +349,7 @@ export var CollectionControl = L.Control.extend({
 
         $("#code-output").val(output);
     },
-    
+
     _loadFromText: function() {
         if (this._currentDrawable !== undefined) {
             var botAPI = $("#bot-api option:selected").text();

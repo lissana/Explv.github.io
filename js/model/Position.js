@@ -10,7 +10,7 @@ export class Position {
     constructor(x, y, z) {
         this.x = Math.round(x);
         this.y = Math.round(y);
-        this.z = z;
+        this.z = Math.round(z);
     }
 
     static fromLatLng(map, latLng, z) {
